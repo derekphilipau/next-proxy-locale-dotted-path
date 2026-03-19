@@ -52,6 +52,11 @@ export async function generateMetadata({
   params: LocaleParams
 }): Promise<Metadata> {
   const { locale } = await params
+
+  if (!SUPPORTED.has(locale)) {
+    return {}
+  }
+
   const siteSettings = await getSiteSettingsLikeData(locale)
 
   return {
