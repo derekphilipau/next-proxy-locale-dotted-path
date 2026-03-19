@@ -11,6 +11,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api(?!/test-proxy)|_next|_vercel|mothra|sculptured|sitemaps|robots.txt|icon|apple-icon|exhibitions/objects|.*\\..*).*)',
+    '/((?!_next|_vercel|.*\\..*).*)',
   ],
 }
