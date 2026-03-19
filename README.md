@@ -1,89 +1,112 @@
-# Next.js Root Dotted Path Repro
+# App Router: Missing Root Dotted Paths Can Enter Top-Level `[locale]` And `500` On Vercel Instead Of `404`
 
-This repo is a minimal reproduction of a production-only Next.js App Router failure on Vercel.
+This repo is a minimal reproduction of a Vercel production issue with Next.js App Router.
 
-## Issue
+## Summary
 
-A missing root-level dotted path that should return `404` is instead handled by the top-level dynamic `[locale]` route and ends up returning `500`.
+Primary bug:
 
-Current failing example:
+- a missing root dotted path like `/nonexistent-file.png` should return `404`
+- instead, on Vercel, it is routed through the top-level dynamic `[locale]` segment
 
-- `/nonexistent-file.png`
+Secondary effect:
 
-Expected behavior:
+- once the request enters `app/[locale]`, `generateMetadata()` runs for `locale = "nonexistent-file.png"`
+- app code then crashes and the response becomes `500`
 
-- `/nonexistent-file.png` returns `404`
+This means the metadata crash is not the root bug. The routing is already wrong before the crash happens.
 
-Actual behavior on Vercel:
-
-- `/nonexistent-file.png` returns `500`
-- the request enters the `[locale]` tree
-- `generateMetadata()` runs for `locale = "nonexistent-file.png"`
-- metadata code crashes with:
-
-```txt
-TypeError: Cannot read properties of null (reading '_type')
-```
-
-This is the same failure shape as the original production issue:
-
-- unknown root dotted path
-- interpreted as `[locale]`
-- real metadata/layout code executes
-- request fails with `500` instead of `404`
-
-## Current Deployment
-
-- `https://next-proxy-locale-dotted-path.vercel.app`
-
-Useful paths:
-
-- `/en`
-- `/es`
-- `/favicon.ico`
-- `/nonexistent-file.png`
-
-## Stack
+## Versions
 
 - `next@^16.2.0`
 - `next-intl@^4.8.3`
 - `react@^19.2.4`
 
-## Why This Repro Fails
+## Deployment
 
-The repro keeps a top-level `[locale]` route and a `proxy.ts` matcher that excludes dotted paths:
+- `https://next-proxy-locale-dotted-path.vercel.app`
+
+Useful URLs:
+
+- `https://next-proxy-locale-dotted-path.vercel.app/en`
+- `https://next-proxy-locale-dotted-path.vercel.app/es`
+- `https://next-proxy-locale-dotted-path.vercel.app/favicon.ico`
+- `https://next-proxy-locale-dotted-path.vercel.app/nonexistent-file.png`
+
+## Expected Behavior
+
+- `/nonexistent-file.png` returns `404`
+
+## Actual Behavior On Vercel
+
+- `/nonexistent-file.png` returns `500`
+- the request enters the `[locale]` tree
+- `generateMetadata()` runs for `locale = "nonexistent-file.png"`
+- the app crashes with:
+
+```txt
+TypeError: Cannot read properties of null (reading '_type')
+```
+
+Example Vercel log shape:
+
+```txt
+Failed to handle /nonexistent-file.png
+TypeError: Cannot read properties of null (reading '_type')
+```
+
+## Minimal Repro Conditions
+
+This repro is intentionally small. The relevant pieces are:
+
+- a top-level dynamic locale route at [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx)
+- `[locale]` is the only top-level page entry
+- `generateStaticParams()` exists on the locale layout
+- `next-intl` uses `localePrefix: 'as-needed'`
+- `proxy.ts` excludes dotted paths with:
 
 ```ts
 '/((?!_next|_vercel|.*\\..*).*)'
 ```
 
-That means requests like `/nonexistent-file.png` bypass the normal locale middleware path. On Vercel, the App Router can then treat the path segment as the dynamic locale:
+- `generateMetadata()` does async work and crashes for invalid locale input
+
+The key point is that the repro does not depend on any project-specific paths. The only matcher behavior that matters here is the blanket dotted-path exclusion.
+
+## Why This Demonstrates A Routing Bug
+
+Requests like `/nonexistent-file.png` should not enter `app/[locale]` at all.
+
+In this repro, the dotted-path exclusion causes that request to bypass normal locale middleware handling. On Vercel, the App Router then treats the root segment as the dynamic locale:
 
 - `app/[locale]`
 - `locale = "nonexistent-file.png"`
 
-Inside [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx), `generateMetadata()` intentionally performs async metadata work without first rejecting invalid locales. For invalid locales, the helper in [src/lib/site-settings.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/lib/site-settings.ts) returns a null image object, and the metadata helper reads `_type` from `null`, causing the `500`.
+After that, application code runs and turns the bad route match into a `500`.
 
-## Minimal Repro Shape
+So the sequence is:
 
-The repro is intentionally small. The key files are:
+1. missing dotted root path
+2. enters top-level `[locale]`
+3. `generateMetadata()` executes
+4. app crashes
+5. response is `500` instead of `404`
 
-- [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx)
-- [src/app/[locale]/page.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/page.tsx)
-- [src/proxy.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/proxy.ts)
-- [src/i18n/routing.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/i18n/routing.ts)
-- [src/i18n/request.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/i18n/request.ts)
-- [src/lib/site-settings.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/lib/site-settings.ts)
+## A/B Matcher Note
 
-Important characteristics:
+With this matcher in [src/proxy.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/proxy.ts):
 
-- `[locale]` is the only top-level page entry
-- `generateStaticParams()` exists on the locale layout
-- `next-intl` uses `localePrefix: 'as-needed'`
-- the proxy matcher excludes `.*\\..*`
-- invalid locales still reach metadata work
+```ts
+'/((?!_next|_vercel|.*\\..*).*)'
+```
 
-## How To Reproduce
+the issue reproduces on Vercel for `/nonexistent-file.png`.
+
+If the blanket dotted-path exclusion `.*\\..*` is removed, the same path returns `404`.
+
+That suggests the important trigger is not the metadata code by itself, but the routing behavior caused by excluding dotted paths from the proxy matcher.
+
+## Repro Steps
 
 ### Local
 
@@ -107,7 +130,7 @@ Deploy this repo, then open:
 
 - `https://next-proxy-locale-dotted-path.vercel.app/en`
 
-Click:
+Then click:
 
 - `Test /nonexistent-file.png`
 
@@ -117,27 +140,11 @@ Or request directly:
 curl -i https://next-proxy-locale-dotted-path.vercel.app/nonexistent-file.png
 ```
 
-## Observed Vercel Error
+## Relevant Files
 
-Example Vercel log output:
-
-```txt
-TypeError: Cannot read properties of null (reading '_type')
-Failed to handle /nonexistent-file.png
-```
-
-The important point is not just that metadata crashes. The routing behavior is wrong first:
-
-- a missing dotted root path should have been a plain `404`
-- instead, it enters the `[locale]` route tree
-- then metadata runs and turns the request into a `500`
-
-## Known Good Path
-
-For comparison:
-
-- `/favicon.ico` should return `200`
-
-## Suspected Fix Direction
-
-The likely fix is to stop blanket-excluding dotted paths in [src/proxy.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/proxy.ts), while still excluding only the real metadata routes and internal paths that should bypass middleware.
+- [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx)
+- [src/app/[locale]/page.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/page.tsx)
+- [src/proxy.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/proxy.ts)
+- [src/i18n/routing.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/i18n/routing.ts)
+- [src/i18n/request.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/i18n/request.ts)
+- [src/lib/site-settings.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/lib/site-settings.ts)
