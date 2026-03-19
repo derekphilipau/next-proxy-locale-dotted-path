@@ -19,7 +19,6 @@ This means the metadata crash is not the root bug. The routing is already wrong 
 ## Versions
 
 - `next@^16.2.0`
-- `next-intl@^4.8.3`
 - `react@^19.2.4`
 
 ## Deployment
@@ -62,7 +61,6 @@ This repro is intentionally small. The relevant pieces are:
 - a top-level dynamic locale route at [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx)
 - `[locale]` is the only top-level page entry
 - `generateStaticParams()` exists on the locale layout
-- `next-intl` uses `localePrefix: 'as-needed'`
 - `proxy.ts` excludes dotted paths with:
 
 ```ts
@@ -145,6 +143,4 @@ curl -i https://next-proxy-locale-dotted-path.vercel.app/nonexistent-file.png
 - [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx)
 - [src/app/[locale]/page.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/page.tsx)
 - [src/proxy.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/proxy.ts)
-- [src/i18n/routing.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/i18n/routing.ts)
-- [src/i18n/request.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/i18n/request.ts)
 - [src/lib/site-settings.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/lib/site-settings.ts)

@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
 
 import { getSiteSettingsLikeData, unsafeOgImageUrl } from '@/lib/site-settings'
@@ -25,8 +24,6 @@ export default async function LocaleLayout({
   if (!SUPPORTED.has(locale)) {
     notFound()
   }
-
-  setRequestLocale(locale)
 
   return (
     <html lang={locale}>
