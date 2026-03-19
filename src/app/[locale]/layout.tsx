@@ -9,6 +9,10 @@ const SUPPORTED = new Set(['en', 'es'])
 
 type LocaleParams = Promise<{ locale: string }>
 
+export function generateStaticParams() {
+  return [{ locale: 'en' }]
+}
+
 export default async function LocaleLayout({
   children,
   params,
