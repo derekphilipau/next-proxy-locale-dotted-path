@@ -2,11 +2,25 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 
-import { getSiteSettingsLikeData, unsafeOgImageUrl } from '@/lib/site-settings'
-
 const SUPPORTED = new Set(['en', 'es'])
 
 type LocaleParams = Promise<{ locale: string }>
+
+function unsafeOgImageUrl(image: { _type: string } | null) {
+  return `/api/og/${image!._type}`
+}
+
+async function getSiteSettingsLikeData(locale: string) {
+  await Promise.resolve()
+
+  if (!SUPPORTED.has(locale)) {
+    return { ogImage: null }
+  }
+
+  return {
+    ogImage: { _type: 'image' },
+  }
+}
 
 export function generateStaticParams() {
   return [{ locale: 'en' }]

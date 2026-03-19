@@ -9,9 +9,9 @@ export default async function LocalePage({
 
   return (
     <main style={{ fontFamily: 'sans-serif', padding: 24, lineHeight: 1.5 }}>
-      <h1>Locale {locale}</h1>
+      <h1>Repro</h1>
       <p>
-        <a href="/en">Go to /en</a> | <a href="/es">Go to /es</a>
+        Current route: /{locale}
       </p>
       <p>
         <a href="/nonexistent-file.png">Test /nonexistent-file.png</a> (Should 404, not 500)

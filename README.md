@@ -28,7 +28,6 @@ This means the metadata crash is not the root bug. The routing is already wrong 
 Useful URLs:
 
 - `https://next-proxy-locale-dotted-path.vercel.app/en`
-- `https://next-proxy-locale-dotted-path.vercel.app/es`
 - `https://next-proxy-locale-dotted-path.vercel.app/favicon.ico`
 - `https://next-proxy-locale-dotted-path.vercel.app/nonexistent-file.png`
 
@@ -143,4 +142,3 @@ curl -i https://next-proxy-locale-dotted-path.vercel.app/nonexistent-file.png
 - [src/app/[locale]/layout.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/layout.tsx)
 - [src/app/[locale]/page.tsx](/Users/dau/Projects/Met/Github/nextjs-issue/src/app/[locale]/page.tsx)
 - [src/proxy.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/proxy.ts)
-- [src/lib/site-settings.ts](/Users/dau/Projects/Met/Github/nextjs-issue/src/lib/site-settings.ts)
