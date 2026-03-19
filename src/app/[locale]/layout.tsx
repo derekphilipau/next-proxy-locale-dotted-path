@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
 
+import { getSiteSettingsLikeData, unsafeOgImageUrl } from '@/lib/site-settings'
+
 const SUPPORTED = new Set(['en', 'es'])
 
 type LocaleParams = Promise<{ locale: string }>
@@ -35,12 +37,12 @@ export async function generateMetadata({
   params: LocaleParams
 }): Promise<Metadata> {
   const { locale } = await params
-
-  if (!SUPPORTED.has(locale)) {
-    return {}
-  }
+  const siteSettings = await getSiteSettingsLikeData(locale)
 
   return {
     title: `Locale ${locale}`,
+    openGraph: {
+      images: [{ url: unsafeOgImageUrl(siteSettings.ogImage) }],
+    },
   }
 }

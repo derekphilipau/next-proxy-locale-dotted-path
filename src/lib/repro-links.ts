@@ -1,11 +1,13 @@
-export const DEPLOY_URL = 'https://next-proxy-locale-dotted-path.vercel.app'
-
 export const TEST_PATHS = [
   '/en',
   '/es',
+  '/favicon-10x10.png',
+  '/favicon-32x32.png',
+  '/apple-touch-icon-120x120.png',
   '/favicon-does-not-exist.png',
   '/fakeroute.psd',
   '/meta.json',
+  '/home.asp',
   '/robots.txt',
   '/sitemap.xml',
   '/manifest.webmanifest',
