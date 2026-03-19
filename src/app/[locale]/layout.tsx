@@ -53,9 +53,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params
 
-  if (!SUPPORTED.has(locale)) {
-    return {}
-  }
+  // Add back in to get 404's
+  // Regardless, bad routes like /test.png shoudln't be reaching this point
+  // if (!SUPPORTED.has(locale)) {
+  //   return {}
+  // }
 
   const siteSettings = await getSiteSettingsLikeData(locale)
 
