@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { setRequestLocale } from 'next-intl/server'
 import type { ReactNode } from 'react'
 
 const SUPPORTED = new Set(['en', 'es'])
@@ -18,6 +19,8 @@ export default async function LocaleLayout({
   if (!SUPPORTED.has(locale)) {
     notFound()
   }
+
+  setRequestLocale(locale)
 
   return (
     <html lang={locale}>
